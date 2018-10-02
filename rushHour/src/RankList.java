@@ -109,7 +109,7 @@ public class RankList {
 		Collections.sort(list);
 		int rank = 1;
 		for (Record entry : list) {
-			rankstr.append(rank + "¡¢ " + entry + "\r\n");
+			rankstr.append("Rank " + rank + ": " + entry + "\n");
 			rank++;
 			if(rank > 10)
 				break;

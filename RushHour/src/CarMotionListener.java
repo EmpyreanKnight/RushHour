@@ -6,7 +6,7 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.JOptionPane;
 
-class MyListener extends MouseAdapter {
+class CarMotionListener extends MouseAdapter {
 	private int newX, newY, oldX, oldY;
 	private int startX, startY;
 	
@@ -16,7 +16,7 @@ class MyListener extends MouseAdapter {
 	private Car dcar;
 	private RushHour rushHour;
 
-	public MyListener(String direction, Car cars[], Car car, RushHour rushHour) {
+	public CarMotionListener(String direction, Car cars[], Car car, RushHour rushHour) {
 		this.rushHour = rushHour;
 		this.direction = direction;
 		this.cars = cars;
@@ -58,11 +58,11 @@ class MyListener extends MouseAdapter {
 					if (cp.getX() + car.getWidth() > 900) { // win a game
 						RushHour.timer.end();
 						RankList.addRecord(RushHour.user, 
-								(int)(RushHour.timer.getTime() / 1000), RushHour.step);
+								(int)(RushHour.timer.getTime() / 1000), RushHour.stepCount);
 						RushHour.speaker.win();
 						JOptionPane.showMessageDialog(null,
 								"You Win!" + " Time:" + RushHour.timer.getTime() / 1000 
-								+ "s, steps:" + RushHour.step);
+								+ "s, steps:" + RushHour.stepCount);
 						
 						// pop replay window
 						if (JOptionPane.showConfirmDialog(null, "Replay game?") == 0) {
@@ -96,7 +96,7 @@ class MyListener extends MouseAdapter {
 								}
 							}).start();
 						} else {
-							new RushHour(RushHour.carLocation1, RushHour.user);
+							new RushHour();
 							rushHour.dispose();
 						}
 					}
@@ -119,7 +119,7 @@ class MyListener extends MouseAdapter {
 		}
 	}
 
-	// add trace when one step made
+	// add trace when one stepCount made
 	public void mouseReleased(MouseEvent e) {
 		Component cp = (Component) e.getSource();
 		RushHour.nowreclater.add(cp.getBounds());
@@ -143,7 +143,7 @@ class MyListener extends MouseAdapter {
 				}
 			}
 		}
-		RushHour.step++;
+		RushHour.stepCount++;
 	}
 
 	// detect whether moved car occurred an collision with existing cars
@@ -151,7 +151,7 @@ class MyListener extends MouseAdapter {
 		boolean move = true;
 		for (int k = 0; k < cars.length; k++) {
 			Rectangle cRect = cars[k].getBounds();
-			if ((carRect.intersects(cRect) && car.getCarDirec() != cars[k].getCarDirec())
+			if ((carRect.intersects(cRect) && car.getCarDir() != cars[k].getCarDir())
 					&& car.getCarID() != cars[k].getCarID()) {
 				dcar = cars[k];
 				move = false;

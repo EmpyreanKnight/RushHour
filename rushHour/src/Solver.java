@@ -20,12 +20,6 @@ public class Solver {
 	static final char EMPTY = '.'; // empty space, movable into
 	static final char VOID = '@'; // represents everything out of bound
 
-	// breaks a string into lines of length N using regEx
-	static String prettify(String state) {
-		String EVERY_NTH = "(?<=\\G.{N})".replace("N", String.valueOf(N));
-		return state.replaceAll(EVERY_NTH, "\n");
-	}
-
 	// conventional row major 2D-1D index transformation
 	static int rc2i(int r, int c) {
 		return r * N + c;
@@ -97,7 +91,7 @@ public class Solver {
 			sb.setCharAt(rc2i(r, c), car);
 			sb.setCharAt(rc2i(r + L * dr, c + L * dc), EMPTY);
 			propose(sb.toString(), current);
-			current = sb.toString(); // comment to combo as one step
+			current = sb.toString(); // comment to combo as one stepCount
 		}
 	}
 
@@ -119,7 +113,7 @@ public class Solver {
 		}
 	}
 
-	// step guide vector, move the IDth car (fromX, fromY) => (toX, toY)
+	// stepCount guide vector, move the IDth car (fromX, fromY) => (toX, toY)
 	private static Vector<Steps> results = new Vector<Steps>();
 	// car status vector, only maintain (fromX, fromY) coordinates to ID
 	private static Vector<Steps> cars = new Vector<Steps>();
@@ -137,7 +131,7 @@ public class Solver {
 		return 0;
 	}
 	
-	// the recorder method, add a step to the result vector
+	// the recorder method, add a stepCount to the result vector
 	static void addTrace(String prev, String curr) {
 		if(prev == null) {
 			return;
@@ -169,7 +163,7 @@ public class Solver {
 	static int trace(String current) {
 		String prev = pred.get(current);
 		int step = (prev == null) ? 0 : trace(prev) + 1;
-		//System.out.println(step);
+		//System.out.println(stepCount);
 		//System.out.println(prettify(current));
 		addTrace(prev, current);
 		return step;
@@ -226,7 +220,7 @@ public class Solver {
 		//System.out.println(pred.size() + " explored");
 		return results;
 	}
-};
+}
 
 
 class Steps {
