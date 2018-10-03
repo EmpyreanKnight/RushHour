@@ -6,10 +6,6 @@ import java.util.Vector;
 
 class Solver {
 	// classic Rush Hour parameters
-	static final String SHORTS = "2BX"; // length 2 cars
-	static final char GOAL_CAR = 'X';
-	static final char EMPTY = '.'; // empty space, movable into
-	static final char VOID = '@'; // represents everything out of bound
 	private static final int N = 6;
 	private static final int M = 6;
 	private static final int GOAL_R = 2;
