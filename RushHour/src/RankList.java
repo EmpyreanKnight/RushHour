@@ -9,7 +9,6 @@ import java.util.List;
 
 public class RankList {
 	// read the record file to display rank list
-	
 	static class Record implements Comparable<Record> {
 		String user;
 		int time;
@@ -32,18 +31,18 @@ public class RankList {
 		
 		@Override
 		public String toString() {
-			return user + " " + step + " steps, " + time + "s";
+			return user + ", " + step + " steps, " + time + "s";
 		}
 	}
 	
 	public static void addRecord(String user, int time, int step) {
-		StringBuffer newRecord = new StringBuffer();
+		StringBuilder newRecord = new StringBuilder();
 		File file = new File("rank.txt");
 		confirmFile(file);
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new FileReader(file));
-			String tempString = null;
+			String tempString;
 			boolean found = false;
 			
 			while ((tempString = reader.readLine()) != null) {

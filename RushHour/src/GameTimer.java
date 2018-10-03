@@ -5,17 +5,16 @@ import java.awt.event.ActionListener;
 import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import javax.swing.Timer;
 import javax.swing.JLabel;
 
-public class MyTimer extends JLabel implements ActionListener {
+public class GameTimer extends JLabel implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	private Date time;
 	private Timer timer;
 	private DateFormat format;
 	
-	public MyTimer() {
+	GameTimer() {
 		super("", JLabel.CENTER);
 		time = new Date(0);
 		timer = new Timer(1000, this);
@@ -24,7 +23,7 @@ public class MyTimer extends JLabel implements ActionListener {
 		setBackground(Color.LIGHT_GRAY);
 	}
 
-	public void start() {
+	void start() {
 		setVisible(true);
 		setOpaque(true);
 		time.setTime(0);
@@ -32,13 +31,13 @@ public class MyTimer extends JLabel implements ActionListener {
 		timer.start();
 	}
 	
-	public void end() {
+	void end() {
 		setVisible(false);
 		setOpaque(false);
 		timer.stop();
 	}
 
-	public long getTime() {
+	long getTime() {
 		return time.getTime();
 	}
 	

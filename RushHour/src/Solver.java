@@ -1,58 +1,61 @@
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Vector;
 
-public class Solver {
+class Solver {
 	// classic Rush Hour parameters
-	static final int N = 6;
-	static final int M = 6;
-	static final int GOAL_R = 2;
-	static final int GOAL_C = 5;
-
-	static final String HORZS = "23X"; // horizontal-sliding cars
-	static final String VERTS = "BC"; // vertical-sliding cars
-	static final String LONGS = "3C"; // length 3 cars
 	static final String SHORTS = "2BX"; // length 2 cars
 	static final char GOAL_CAR = 'X';
 	static final char EMPTY = '.'; // empty space, movable into
 	static final char VOID = '@'; // represents everything out of bound
+	private static final int N = 6;
+	private static final int M = 6;
+	private static final int GOAL_R = 2;
+	private static final int GOAL_C = 5;
+
+    private static final String HORZS = "23X"; // horizontal-sliding cars
+    private static final String VERTS = "BC"; // vertical-sliding cars
+    private static final String LONGS = "3C"; // length 3 cars
+    private static final String SHORTS = "2BX"; // length 2 cars
+    private static final char GOAL_CAR = 'X';
+    private static final char EMPTY = '.'; // empty space, movable into
+    private static final char VOID = '@'; // represents everything out of bound
 
 	// conventional row major 2D-1D index transformation
-	static int rc2i(int r, int c) {
+    private static int rc2i(int r, int c) {
 		return r * N + c;
 	}
 
 	// checks if an entity is of a given type
-	static boolean isType(char entity, String type) {
+    private static boolean isType(char entity, String type) {
 		return type.indexOf(entity) != -1;
 	}
 
-	// finds the length of a car
-	static int length(char car) {
+	// finds the length of a cars
+    private static int length(char car) {
 		return isType(car, LONGS) ? 3 : isType(car, SHORTS) ? 2 : 0 / 0; 
 		// a shortcut for throwing IllegalArgumentException
 	}
 
 	// in given state, returns the entity at a given coordinate, possibly out of bound
-	static char at(String state, int r, int c) {
+    private static char at(String state, int r, int c) {
 		return (inBound(r, M) && inBound(c, N)) ? state.charAt(rc2i(r, c)) : VOID;
 	}
 
-	static boolean inBound(int v, int max) {
+    private static boolean inBound(int v, int max) {
 		return (v >= 0) && (v < max);
 	}
 
 	// checks if a given state is a goal state
-	static boolean isGoal(String state) {
+    private static boolean isGoal(String state) {
 		return at(state, GOAL_R, GOAL_C) == GOAL_CAR;
 	}
 
 	// in a given state, starting from given coordinate, toward the given direction,
 	// counts how many empty spaces there are (origin inclusive)
-	static int countSpaces(String state, int r, int c, int dr, int dc) {
+    private static int countSpaces(String state, int r, int c, int dr, int dc) {
 		int k = 0;
 		while (at(state, r + k * dr, c + k * dc) == EMPTY) {
 			k++;
@@ -61,23 +64,23 @@ public class Solver {
 	}
 
 	// the predecessor map, maps currentState => previousState
-	static Map<String, String> pred = new HashMap<String, String>();
+    private static Map<String, String> pred = new HashMap<>();
 	// the breadth first search queue
-	static Queue<String> queue = new LinkedList<String>();
+    private static Queue<String> queue = new LinkedList<>();
 
 	// the breadth first search proposal method: 
 	// if we haven't reached it yet, we map the given state and add to queue
-	static void propose(String next, String prev) {
+    private static void propose(String next, String prev) {
 		if (!pred.containsKey(next)) {
 			pred.put(next, prev);
 			queue.add(next);
 		}
 	}
 
-	// in a given state, from a given origin coordinate, attempts to find a car of a given type
+	// in a given state, from a given origin coordinate, attempts to find a cars of a given type
 	// at a given distance in a given direction; if found, slide it in the opposite direction
 	// one spot at a time, exactly n times, proposing those states to the breadth first search
-	static void slide(String current, int r, int c, String type, int distance, int dr, int dc, int n) {
+    private static void slide(String current, int r, int c, String type, int distance, int dr, int dc, int n) {
 		r += distance * dr;
 		c += distance * dc;
 		char car = at(current, r, c);
@@ -96,7 +99,7 @@ public class Solver {
 	}
 
 	// explores a given state; searches for next level states in the breadth
-	static void explore(String current) {
+    private static void explore(String current) {
 		for (int r = 0; r < M; r++) {
 			for (int c = 0; c < N; c++) {
 				if (at(current, r, c) != EMPTY)
@@ -113,14 +116,14 @@ public class Solver {
 		}
 	}
 
-	// stepCount guide vector, move the IDth car (fromX, fromY) => (toX, toY)
-	private static Vector<Steps> results = new Vector<Steps>();
-	// car status vector, only maintain (fromX, fromY) coordinates to ID
-	private static Vector<Steps> cars = new Vector<Steps>();
+	// stepCount guide vector, move the IDth cars (fromX, fromY) => (toX, toY)
+	private static Vector<Steps> results = new Vector<>();
+	// cars status vector, only maintain (fromX, fromY) coordinates to ID
+	private static Vector<Steps> cars = new Vector<>();
 	
-	// update start position of the moved car
-	// return the ID of moved car
-	static int updateID(int r, int c, int dx, int dy) {
+	// update startMusic position of the moved cars
+	// return the ID of moved cars
+    private static int updateID(int r, int c, int dx, int dy) {
 		for(Steps car : cars) {
 			if(car.fromX == r && car.fromY == c) {
 				car.fromX += dx;
@@ -132,7 +135,7 @@ public class Solver {
 	}
 	
 	// the recorder method, add a stepCount to the result vector
-	static void addTrace(String prev, String curr) {
+    private static void addTrace(String prev, String curr) {
 		if(prev == null) {
 			return;
 		}
@@ -160,7 +163,7 @@ public class Solver {
 
 	// the predecessor tracing method, implemented using recursion for brevity;
 	// guaranteed no infinite recursion
-	static int trace(String current) {
+    private static int trace(String current) {
 		String prev = pred.get(current);
 		int step = (prev == null) ? 0 : trace(prev) + 1;
 		//System.out.println(stepCount);
@@ -170,7 +173,7 @@ public class Solver {
 	}
 	
 	// initialize all containers
-	static void init() {
+    private static void init() {
 		results.clear();
 		cars.clear();
 		pred.clear();
@@ -181,7 +184,7 @@ public class Solver {
 	static Vector<Steps> solve(Map<Integer, Steps> position) {
 		init();
 		
-		StringBuffer initial = new StringBuffer();
+		StringBuilder initial = new StringBuilder();
 		for(int i = 0; i < N*M; i++) {
 			initial.append('.');
 		}
@@ -228,7 +231,7 @@ class Steps {
 	int fromX, fromY;
 	int toX, toY;
 
-	public Steps(int ID, int fromX, int fromY, int toX, int toY) {
+	Steps(int ID, int fromX, int fromY, int toX, int toY) {
 		this.ID = ID;
 		this.fromX = fromX;
 		this.fromY = fromY;

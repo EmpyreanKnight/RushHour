@@ -11,48 +11,74 @@ import java.util.Vector;
 import javax.swing.*;
 
 public class RushHour extends JFrame implements ActionListener {
-    private static final long serialVersionUID = 1L;
-
     // (ID, type, x-coordination, y-coordination, direction) of cars in each stage
     // carType 0 indicates short, 1 indicates long
-    // carDirec 0 indicates horizontal, 1 indicates vertical
+    // carDir 0 indicates horizontal, 1 indicates vertical
     private static int carLocation1[][] = new int[][]{
             {1, 0, 1, 3, 0},
             {2, 1, 3, 1, 1},
             {3, 1, 1, 6, 0},
-            {4, 1, 6, 4, 1}};
+            {4, 1, 6, 4, 1}
+    };
     private static int carLocation2[][] = new int[][]{
+            {1, 0, 2, 3, 0},
+            {2, 0, 1, 1, 0},
+            {3, 1, 1, 2, 1},
+            {4, 0, 1, 5, 1},
+            {5, 1, 4, 2, 1},
+            {6, 1, 3, 6, 0},
+            {7, 0, 5, 5, 0},
+            {8, 1, 6, 1, 1}
+    };
+    private static int carLocation22[][] = new int[][]{
             {1, 0, 1, 3, 0},
             {2, 1, 5, 1, 1},
             {3, 1, 4, 5, 0},
             {4, 0, 5, 6, 0},
             {5, 0, 2, 5, 1}};
-    private static int carLocation3[][] = new int[][]{
+    private static int carLocation33[][] = new int[][]{
             {1, 0, 3, 3, 0},
             {2, 0, 4, 1, 0},
             {3, 1, 6, 1, 1},
             {4, 0, 5, 4, 0},
             {5, 1, 4, 4, 1},
             {6, 0, 3, 1, 1}};
+    /*
+    This configuration is claimed to be the hardest one
+    Required at least 93 moves to solve it (our solver can do it!)
+    http://cs.ulb.ac.be/~fservais/rushhour/index.php?window_size=20&offset=0
+    */
+    private static int carLocation3[][] = new int[][]{
+            {1, 0, 3, 3, 0},
+            {2, 0, 1, 2, 1},
+            {3, 0, 2, 5, 1},
+            {4, 0, 3, 4, 1},
+            {5, 0, 4, 1, 1},
+            {6, 1, 5, 1, 1},
+            {7, 1, 6, 1, 1},
+            {8, 1, 1, 1, 0},
+            {9, 0, 2, 2, 0},
+            {10, 0, 1, 4, 0},
+            {11, 0, 3, 6, 0},
+            {12, 0, 5, 5, 0},
+            {13, 0, 5, 6, 0}
+    };
 
     // record every moved stepCount
-    static List<Rectangle> nowrec = new ArrayList<Rectangle>();
-    static List<Car> nowcar = new ArrayList<Car>();
-    static List<Rectangle> nowreclater = new ArrayList<Rectangle>();
-    static List<Car> nowcarlater = new ArrayList<Car>();
+    List<Rectangle> startPosRec;
+    List<Rectangle> endPosRec;
+    List<Car> carRec;
+    boolean start;
+    int stepCount;
 
     // record current game info
-    static int[][] carLocation;
-    static boolean start = false;
-    static String user;
-    static int stepCount;
-    static Car car[];
+    private int[][] carLocation;
+    private Car cars[];
 
-    // audio controller
-    static Speaker speaker = new Speaker();
-
-    // game timer
-    static MyTimer timer = new MyTimer();
+    // controller components
+    private Speaker speaker;
+    private JLabel countDown;
+    private GameTimer timer;
 
     private JButton startButton;
 
@@ -68,18 +94,16 @@ public class RushHour extends JFrame implements ActionListener {
     private JButton thirdStageButton;
 
     public RushHour() {
-        new RushHour(RushHour.carLocation1, "");
+        new RushHour(RushHour.carLocation1);
     }
 
-    public RushHour(int[][] carlocation, String user) {
+    public RushHour(int[][] carLocation) {
         stepCount = 0;
         start = false;
-        nowrec = new ArrayList<Rectangle>();
-        nowreclater = new ArrayList<Rectangle>();
-        nowcar = new ArrayList<Car>();
-        nowcarlater = new ArrayList<Car>();
-        RushHour.carLocation = carlocation;
-        RushHour.user = user;
+        startPosRec = new ArrayList<>();
+        endPosRec = new ArrayList<>();
+        carRec = new ArrayList<>();
+        this.carLocation = carLocation;
 
         init();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -87,9 +111,8 @@ public class RushHour extends JFrame implements ActionListener {
         setVisible(true);
     }
 
-    public void init() {
+    private void init() {
         setLayout(null);
-        JButton button;
 
         JLabel label = new JLabel(new ImageIcon("img/title.png"));
         label.setBounds(10, 20, 300, 100);
@@ -170,13 +193,25 @@ public class RushHour extends JFrame implements ActionListener {
         thirdStageButton.setBounds(50, 360, 200, 50);
         add(thirdStageButton);
 
+        speaker = new Speaker();
         speaker.setVisible(true);
         speaker.setBounds(870, 30, 44, 44);
         add(speaker);
 
+        timer = new GameTimer();
         timer.setBounds(50, 460, 200, 50);
         timer.end();
         add(timer);
+
+        countDown = new JLabel();
+        countDown.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 50));
+        countDown.setVerticalAlignment(SwingConstants.CENTER);
+        countDown.setHorizontalAlignment(SwingConstants.CENTER);
+        countDown.setBackground(Color.WHITE);
+        countDown.setOpaque(true);
+        countDown.setBounds(515, 220, 150, 150);
+        countDown.setVisible(false);
+        getLayeredPane().add(countDown, JLayeredPane.POPUP_LAYER);
 
         startButton = new JButton();
         startButton.setName("START");
@@ -186,25 +221,20 @@ public class RushHour extends JFrame implements ActionListener {
 
         ((JPanel) this.getContentPane()).setOpaque(false);
         JLabel background = new JLabel(new ImageIcon("img/rushhour.png"));
-        getLayeredPane().add(background, new Integer(Integer.MIN_VALUE));
-        getLayeredPane().add(startButton, new Integer(Integer.MAX_VALUE));
+        getLayeredPane().add(background, JLayeredPane.DEFAULT_LAYER);
+        getLayeredPane().add(startButton, JLayeredPane.POPUP_LAYER);
         background.setBounds(300, 0, 581, 614);
 
         // set cars on game board
-        car = new Car[carLocation.length];
-        for (int k = 0; k < car.length; k++) {
-            car[k] = new Car(carLocation[k][0], carLocation[k][1], carLocation[k][2],
-                    carLocation[k][3], carLocation[k][4]);
-            if (carLocation[k][4] == 0) {
-                CarMotionListener mh = new CarMotionListener("0", car, car[k], this);
-                car[k].addMouseListener(mh);
-                car[k].addMouseMotionListener(mh);
-            } else {
-                CarMotionListener mz = new CarMotionListener("1", car, car[k], this);
-                car[k].addMouseListener(mz);
-                car[k].addMouseMotionListener(mz);
-            }
-            add(car[k]);
+        cars = new Car[carLocation.length];
+        for (int i = 0; i < carLocation.length; i++) {
+            cars[i] = new Car(carLocation[i][0], carLocation[i][1], carLocation[i][2],
+                    carLocation[i][3], carLocation[i][4]);
+
+            CarMotionListener listener = new CarMotionListener(cars, cars[i], this);
+            cars[i].addMouseListener(listener);
+            cars[i].addMouseMotionListener(listener);
+            getLayeredPane().add(cars[i], JLayeredPane.PALETTE_LAYER);
         }
     }
 
@@ -214,15 +244,13 @@ public class RushHour extends JFrame implements ActionListener {
         switch (((JButton)e.getSource()).getName()) {
             case "RESTART":
                 dispose();
-                new RushHour(carLocation, user);
+                new RushHour(carLocation);
                 break;
             case "UNDO":
-                if (nowcar != null && nowcar.size() > 0 && nowrec != null && nowrec.size() > 0) {
-                    nowcar.get(nowcar.size() - 1).setBounds(nowrec.get(nowrec.size() - 1));
-                    nowrec.remove(nowrec.size() - 1);
-                    nowcar.remove(nowcar.size() - 1);
-                    RushHour.nowreclater.remove(RushHour.nowreclater.size() - 1);
-                    RushHour.nowcarlater.remove(RushHour.nowcarlater.size() - 1);
+                if (carRec != null && carRec.size() > 0 && startPosRec != null && startPosRec.size() > 0) {
+                    carRec.get(carRec.size() - 1).setBounds(startPosRec.get(startPosRec.size() - 1));
+                    startPosRec.remove(startPosRec.size() - 1);
+                    carRec.remove(carRec.size() - 1);
                 }
                 break;
             case "STAGE":
@@ -239,24 +267,38 @@ public class RushHour extends JFrame implements ActionListener {
                 break;
             case "TUTORIAL":
                 this.setVisible(false);
-                new TurorialFrame(this);
+                new TutorialFrame(this);
                 break;
             case "START":
-                speaker.start();
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
-                RushHour.start = true;
                 startButton.setVisible(false);
-                timer.start();
+                countDown.setVisible(true);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            speaker.startMusic();
+                            countDown.setText("3");
+                            Thread.sleep(1000);
+                            countDown.setText("2");
+                            Thread.sleep(1000);
+                            countDown.setText("1");
+                            Thread.sleep(1000);
+                            countDown.setText("GO!");
+                            Thread.sleep(300);
+                        } catch (InterruptedException e1) {
+                            e1.printStackTrace();
+                        }
+                        countDown.setVisible(false);
+                        start = true;
+                        timer.start();
+                    }
+                }).start();
                 break;
             case "SKIP":
                 if (!start)
                     return;
-                Map<Integer, Steps> position = new HashMap<Integer, Steps>();
-                for (Car c : car) {
+                Map<Integer, Steps> position = new HashMap<>();
+                for (Car c : cars) {
                     int fromX = c.getCarY() - 1;
                     int fromY = c.getCarX() - 1;
                     int toX = fromX + (c.getCarDir() == 1 ? (c.getCarType() == 1 ? 2 : 1) : 0);
@@ -264,8 +306,7 @@ public class RushHour extends JFrame implements ActionListener {
                     position.put(c.getCarID(), new Steps(c.getCarID(), fromX, fromY, toX, toY));
                 }
 
-                Vector<Steps> rec = Solver.solve(position);
-                final Vector<Steps> res = rec;
+                final Vector<Steps> res = Solver.solve(position);
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -275,37 +316,84 @@ public class RushHour extends JFrame implements ActionListener {
                             } catch (InterruptedException e1) {
                                 e1.printStackTrace();
                             }
-                            Car c = car[pos.ID - 1];
-                            nowcar.add(c);
-                            nowrec.add(c.getBounds());
+                            Car c = cars[pos.ID - 1];
+                            carRec.add(c);
+                            startPosRec.add(c.getBounds());
                             int width = c.getCarDir() == 0 ? c.getCarType() == 1 ? 3 : 2 : 1;
                             int height = c.getCarDir() == 1 ? c.getCarType() == 1 ? 3 : 2 : 1;
                             c.setBounds(350 + pos.toY * Car.CAR_SIZE, pos.toX * Car.CAR_SIZE + 53,
                                     width * Car.CAR_SIZE, height * Car.CAR_SIZE);
-                            nowcarlater.add(c);
-                            nowreclater.add(c.getBounds());
                         }
                     }
                 }).start();
                 break;
             case "EXIT":
                 dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+                break;
             case "STAGE1":
                 dispose();
-                new RushHour(carLocation1, user);
+                new RushHour(carLocation1);
                 break;
             case "STAGE2":
                 dispose();
-                new RushHour(carLocation2, user);
+                new RushHour(carLocation2);
                 break;
             case "STAGE3":
                 dispose();
-                new RushHour(carLocation3, user);
+                new RushHour(carLocation3);
                 break;
         }
     }
 
+    void winGame() {
+        timer.end();
+        speaker.winningMusic();
+        String username = JOptionPane.showInputDialog(null,
+                "You Win!" + " Time:" + timer.getTime() / 1000
+                        + "s, steps:" + stepCount + "\nPlease enter your name:",
+                "Anonymous");
+        if (username != null) {
+            RankList.addRecord(username,
+                    (int) (timer.getTime() / 1000), stepCount);
+        }
+
+        // pop replay window
+        if (JOptionPane.showConfirmDialog(null, "Want to replay your game?",
+                "Replay?", JOptionPane.YES_NO_OPTION) == 0) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 0; i < cars.length; i++) {
+                        cars[i].setPosition(carLocation[i][2], carLocation[i][3]);
+                    }
+                    for (int i = 0; i < endPosRec.size(); i++) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e1) {
+                            e1.printStackTrace();
+                        }
+                        carRec.get(i).setBounds(endPosRec.get(i));
+                    }
+
+                    try {
+                        Thread.sleep(1000);
+                        cars[0].setBounds(270 + 480, 240 - 27, 160, 80);
+                        Thread.sleep(1500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    new RushHour(carLocation);
+                    dispose();
+                }
+            }).start();
+        } else {
+            dispose();
+            new RushHour(carLocation);
+        }
+    }
+
     public static void main(String[] args) {
-        RushHour rushHour = new RushHour(RushHour.carLocation1, "");
+        new RushHour();
     }
 }
