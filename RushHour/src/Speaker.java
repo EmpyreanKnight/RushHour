@@ -46,6 +46,7 @@ public class Speaker extends JButton implements ActionListener {
 	void startMusic() {
 		if (playMusic) {
 			startMusic.start();
+			startMusic.setFramePosition(0);
 		}
 	}
 
@@ -53,6 +54,7 @@ public class Speaker extends JButton implements ActionListener {
 	void winningMusic() {
 		if (playMusic) {
 			endMusic.start();
+            endMusic.setFramePosition(0);
 		}
 	}
 
