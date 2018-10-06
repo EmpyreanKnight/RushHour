@@ -70,6 +70,7 @@ public class RushHour extends JFrame implements ActionListener {
     List<Car> carRec;
     boolean start;
     int stepCount;
+    int stage;
 
     // record current game info
     private int[][] carLocation;
@@ -94,12 +95,12 @@ public class RushHour extends JFrame implements ActionListener {
     private JButton thirdStageButton;
 
     public RushHour() {
-        new RushHour(RushHour.carLocation1);
+        new RushHour(RushHour.carLocation1, 1);
     }
 
-    public RushHour(int[][] carLocation) {
+    public RushHour(int[][] carLocation, int stage) {
         init();
-        reset(carLocation);
+        reset(carLocation, stage);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(950, 700);
         setVisible(true);
@@ -256,7 +257,7 @@ public class RushHour extends JFrame implements ActionListener {
                 exitButton.setVisible(false);
                 break;
             case "HISTORY":
-                JOptionPane.showMessageDialog(null, RankList.readRank());
+                JOptionPane.showMessageDialog(null, RankList.readRank(stage));
                 break;
             case "TUTORIAL":
                 this.setVisible(false);
@@ -266,7 +267,7 @@ public class RushHour extends JFrame implements ActionListener {
                 dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
                 break;
             case "RESET":
-                reset(carLocation);
+                reset(carLocation, stage);
                 break;
             case "UNDO":
                 if (carRec != null && carRec.size() > 0 && startPosRec != null && startPosRec.size() > 0) {
@@ -310,13 +311,13 @@ public class RushHour extends JFrame implements ActionListener {
                 }).start();
                 break;
             case "STAGE1":
-                reset(carLocation1);
+                reset(carLocation1, 1);
                 break;
             case "STAGE2":
-                reset(carLocation2);
+                reset(carLocation2, 2);
                 break;
             case "STAGE3":
-                reset(carLocation3);
+                reset(carLocation3, 3);
                 break;
         }
     }
@@ -329,8 +330,8 @@ public class RushHour extends JFrame implements ActionListener {
                         + "s, steps:" + stepCount + "\nPlease enter your name:",
                 "Anonymous");
         if (username != null) {
-            RankList.addRecord(username,
-                    (int) (timer.getTime() / 1000), stepCount);
+            RankList.addNewRecord(username,
+                    (int) (timer.getTime() / 1000), stepCount, stage);
         }
 
         replay();
@@ -364,14 +365,15 @@ public class RushHour extends JFrame implements ActionListener {
                 replay();
             }).start();
         } else {
-            reset(carLocation);
+            reset(carLocation, stage);
         }
     }
 
-    private void reset(int[][] carLocation) {
+    private void reset(int[][] carLocation, int stage) {
         // initialize status variable
         stepCount = 0;
         start = false;
+        this.stage = stage;
         startPosRec = new ArrayList<>();
         endPosRec = new ArrayList<>();
         carRec = new ArrayList<>();

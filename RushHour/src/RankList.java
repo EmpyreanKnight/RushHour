@@ -1,128 +1,198 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class RankList {
-	// read the record file to display rank list
+class RankList {
+	// record item
+	private static final String rankFile = "./rank.xml";
+
 	static class Record implements Comparable<Record> {
 		String user;
 		int time;
-		int step;
-		
-		Record(String user, int time, int step) {
+		int steps;
+
+		Record(String user, int time, int steps) {
 			this.user = user;
 			this.time = time;
-			this.step = step;
+			this.steps = steps;
 		}
 
 		@Override
 		public int compareTo(Record rhs) {
-			if(step != rhs.step)
-				return step - rhs.step;
+			if(steps != rhs.steps)
+				return steps - rhs.steps;
 			if(time != rhs.time)
 				return time - rhs.time;
 			return user.compareTo(rhs.user);
 		}
-		
+
 		@Override
 		public String toString() {
-			return user + ", " + step + " steps, " + time + "s";
+			return user + ", " + steps + " steps, " + time + "s";
 		}
 	}
-	
-	public static void addRecord(String user, int time, int step) {
-		StringBuilder newRecord = new StringBuilder();
-		File file = new File("rank.txt");
-		confirmFile(file);
-		BufferedReader reader = null;
-		try {
-			reader = new BufferedReader(new FileReader(file));
-			String tempString;
-			boolean found = false;
-			
-			while ((tempString = reader.readLine()) != null) {
-				newRecord.append(tempString);
-				if (tempString.contains(user)) {
-					found = true;
-					newRecord.append("##" + time + "##" + step);
-				}
-				newRecord.append("\r\n");
-			}
-			if(!found) {
-				newRecord.append(user + "##" + time + "##" + step + "\r\n");
-			}
-			
-			FileWriter fw = new FileWriter("rank.txt");
-			fw.write(newRecord.toString());
-			fw.flush();
-			fw.close();
-			reader.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (reader != null) {
-				try {
-					reader.close();
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
-			}
-		}
-	}
-	
-	public static String readRank() {
-		StringBuffer rankstr = new StringBuffer();
-		File file = new File("rank.txt");
-		confirmFile(file);
-		List<Record> list = new ArrayList<Record>();
-		BufferedReader reader = null;
+
+	public static String readRank(int stage) {
+		StringBuilder rankStr = new StringBuilder();
+        List<Record> list = new ArrayList<>();
+        File file = new File(rankFile);
+		secureFile(file);
 
 		try {
-			reader = new BufferedReader(new FileReader(file));
-			String tempString = null;
-			while ((tempString = reader.readLine()) != null) {
-				String str[] = tempString.split("##");
-				for(int i = 1; i < str.length; i += 2) {
-					list.add(new Record(str[0], Integer.parseInt(str[i]), 
-							Integer.parseInt(str[i+1])));
-				}
-			}
-			reader.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (reader != null) {
-				try {
-					reader.close();
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
-			}
-		}
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document doc = builder.parse(file);
+            NodeList stageList = doc.getElementsByTagName("stage");
+
+            for (int i = 0; i < stageList.getLength(); i++) {
+                Node stageNode = stageList.item(i);
+
+                if (stageNode.getAttributes().getNamedItem("number").getNodeValue()
+                        .equals(Integer.toString(stage))) {
+                    NodeList recordList = stageNode.getChildNodes();
+                    for (int j = 0; j < recordList.getLength(); j++) {
+                        Node record = recordList.item(j);
+                        list.add(new Record(
+                                record.getAttributes().getNamedItem("name").getNodeValue(),
+                                Integer.parseInt(record.getAttributes().getNamedItem("time").getNodeValue()),
+                                Integer.parseInt(record.getAttributes().getNamedItem("steps").getNodeValue())
+                        ));
+                    }
+                    break;
+                }
+            }
+        } catch (Exception e) {
+		    e.printStackTrace();
+        }
 		
 		Collections.sort(list);
 		int rank = 1;
 		for (Record entry : list) {
-			rankstr.append("Rank " + rank + ": " + entry + "\n");
+			rankStr.append("Rank " + rank + ": " + entry + "\n");
 			rank++;
-			if(rank > 10)
-				break;
 		}
-		return rankstr.toString();
+		return rankStr.toString();
 	}
-	
-	private static void confirmFile(File fileName) {
-		try {
-			if (!fileName.exists()) {
-				fileName.createNewFile();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+
+    static void addNewRecord(String name, int time, int steps, int stage) {
+        try {
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document doc = builder.parse(rankFile);
+            NodeList stageList = doc.getElementsByTagName("stage");
+
+
+            for (int i = 0; i < stageList.getLength(); i++) {
+                Node stageNode = stageList.item(i);
+
+                if (stageNode.getAttributes().getNamedItem("number").getNodeValue()
+                        .equals(Integer.toString(stage))) {
+
+                    // if records for the stage less than 10, just append a new one
+                    if (stageNode.getChildNodes().getLength() < 10) {
+                        Element record = doc.createElement("record");
+                        record.setAttribute("name", name);
+                        record.setAttribute("time", Integer.toString(time));
+                        record.setAttribute("steps", Integer.toString(steps));
+                        stageNode.appendChild(record);
+                        break;
+                    }
+
+                    // otherwise, find the least one then replace it
+                    NodeList recordList = stageNode.getChildNodes();
+                    int nodeToBeReplaced = -1;
+                    int targetSteps = steps;
+                    int targetTime = time;
+                    for (int j = 0; j < recordList.getLength(); j++) {
+                        Node record = recordList.item(j);
+                        if (compare(targetSteps, targetTime,
+                                Integer.parseInt(record.getAttributes().getNamedItem("steps").getNodeValue()),
+                                Integer.parseInt(record.getAttributes().getNamedItem("time").getNodeValue())
+                        ) < 0) {
+                            nodeToBeReplaced = j;
+                            targetSteps = Integer.parseInt(record.getAttributes().getNamedItem("steps").getNodeValue());
+                            targetTime = Integer.parseInt(record.getAttributes().getNamedItem("time").getNodeValue());
+                        }
+                    }
+                    System.out.println(nodeToBeReplaced);
+                    if (nodeToBeReplaced != -1) {
+                        Element record = doc.createElement("record");
+                        record.setAttribute("name", name);
+                        record.setAttribute("time", Integer.toString(time));
+                        record.setAttribute("steps", Integer.toString(steps));
+                        stageNode.removeChild(recordList.item(nodeToBeReplaced));
+                        stageNode.appendChild(record);
+                    }
+                    break;
+                }
+            }
+
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            DOMSource domSource = new DOMSource(doc);
+            StreamResult streamResult = new StreamResult(rankFile);
+            transformer.transform(domSource, streamResult);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    // return value less than 0: left side is better
+    // return value greater than 0: right side is better
+    private static int compare(int lSteps, int lTime, int rSteps, int rTime) {
+        if(lSteps != rSteps)
+            return lSteps - rSteps;
+        if(lTime != rTime)
+            return lTime - rTime;
+        return 0;
+    }
+
+    private static void secureFile(File fileName) {
+        try {
+            if (fileName.createNewFile()) {
+                createRecordFile();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createRecordFile() {
+        File outFile = new File(rankFile);
+        secureFile(outFile);
+        try {
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document doc = builder.newDocument();
+            Element root = doc.createElement("rank_list");
+            for (int i = 1; i <= 3; i++) {
+                Element stage = doc.createElement("stage");
+                stage.setAttribute("number", Integer.toString(i));
+
+                Element record = doc.createElement("record");
+                record.setAttribute("name", "Rex");
+                record.setAttribute("time", "150");
+                record.setAttribute("steps", "15");
+                stage.appendChild(record);
+
+                root.appendChild(stage);
+            }
+            doc.appendChild(root);
+
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            DOMSource domSource = new DOMSource(doc);
+            StreamResult streamResult = new StreamResult(outFile);
+            transformer.transform(domSource, streamResult);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
