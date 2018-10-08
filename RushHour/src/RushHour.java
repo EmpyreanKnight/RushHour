@@ -46,6 +46,7 @@ public class RushHour extends JFrame implements ActionListener {
     /*
     This configuration is claimed to be the hardest one
     Required at least 93 moves to solve it (our solver can do it!)
+    Source link:
     http://cs.ulb.ac.be/~fservais/rushhour/index.php?window_size=20&offset=0
     */
     private static int carLocation3[][] = new int[][]{
@@ -64,16 +65,16 @@ public class RushHour extends JFrame implements ActionListener {
             {13, 0, 5, 6, 0}
     };
 
-    // record every moved stepCount
+    // record every moved step
     List<Rectangle> startPosRec;
     List<Rectangle> endPosRec;
     List<Car> carRec;
     boolean start;
     int stepCount;
-    int stage;
 
     // record current game info
     private int[][] carLocation;
+    private int stage;
     private Car cars[];
 
     // controller components
@@ -81,6 +82,7 @@ public class RushHour extends JFrame implements ActionListener {
     private JLabel countDown;
     private GameTimer timer;
 
+    // start button
     private JButton startButton;
 
     // main window option buttons
@@ -302,12 +304,10 @@ public class RushHour extends JFrame implements ActionListener {
                         Car c = cars[pos.ID - 1];
                         carRec.add(c);
                         startPosRec.add(c.getBounds());
-                        int width = c.getCarDir() == 0 ? c.getCarType() == 1 ? 3 : 2 : 1;
-                        int height = c.getCarDir() == 1 ? c.getCarType() == 1 ? 3 : 2 : 1;
-                        c.setBounds(350 + pos.toY * Car.CAR_SIZE, pos.toX * Car.CAR_SIZE + 53,
-                                width * Car.CAR_SIZE, height * Car.CAR_SIZE);
+                        c.setPosition(pos.toY + 1, pos.toX + 1);
                         endPosRec.add(c.getBounds());
                     }
+                    stepCount += res.size();
                 }).start();
                 break;
             case "STAGE1":

@@ -1,15 +1,13 @@
-import java.awt.Component;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 class CarMotionListener extends MouseAdapter {
-    private int oldX, oldY; // car last location
-	private int startX, startY; // car initial location
+	private int startX, startY; // car initial coordinates
+    private int startMouseX, startMouseY; // mouse initial coordinates
 
 	private Car cars[];
 	private Car car;
-	private Car collidedCar;
 	private RushHour rushHour;
 
 	CarMotionListener(Car cars[], Car car, RushHour rushHour) {
@@ -20,14 +18,13 @@ class CarMotionListener extends MouseAdapter {
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		Component cp = (Component) e.getSource();
-		startX = cp.getX();
-		startY = cp.getY();
-		oldX = e.getXOnScreen();
-		oldY = e.getYOnScreen();
+		startX = car.getX();
+		startY = car.getY();
+		startMouseX = e.getXOnScreen();
+		startMouseY = e.getYOnScreen();
 
 		// when move a car, record the start position
-		rushHour.startPosRec.add(cp.getBounds());
+		rushHour.startPosRec.add(car.getBounds());
 		rushHour.carRec.add(car);
 	}
 
@@ -36,80 +33,86 @@ class CarMotionListener extends MouseAdapter {
 		if (!rushHour.start)
 			return;
 
-		Component cp = (Component) e.getSource();
-        int newX = e.getXOnScreen();
-        int newY = e.getYOnScreen();
+		int dx = e.getXOnScreen() - startMouseX;
+		int dy = e.getYOnScreen() - startMouseY;
 
-		if (!collisionDetection()) {
-			if (car.getCarDir() == 0) {
-				cp.setBounds(startX + (newX - oldX), startY, cp.getWidth(), cp.getHeight());
-				if (cp.getX() < 350) {
-					cp.setLocation(350, cp.getY());
+        // if the car collide with other cars, we won't update its position
+		if (!collisionDetection(dx, dy)) {
+		    // update location
+            car.setBounds(
+                    car.getCarDir() == 0 ? startX + dx : startX,
+                    car.getCarDir() == 1 ? startY + dy : startY,
+                    car.getWidth(),
+                    car.getHeight()
+            );
+
+		    // do boundary checks
+			if (car.getCarDir() == 0) { // boundary check for horizontal cars
+				// left bound check
+				if (car.getX() < 350) {
+                    car.setLocation(350, car.getY());
 				}
-				
-				// check whether get to the goal
+
+                // right bound check
 				if (car.getCarID() == 1) {
-					if (cp.getX() + car.getWidth() > 900) { // winning a game
-                        rushHour.endPosRec.add(cp.getBounds());
+					if (car.getX() + car.getWidth() > 910) { // winning a game
+                        // update step counter
+                        rushHour.stepCount += Math.abs(Car.Px2CarX(car.getX()) - car.getCarX());
+                        rushHour.stepCount += Math.abs(Car.Py2CarY(car.getY()) - car.getCarY());
+
+                        rushHour.endPosRec.add(car.getBounds());
 						rushHour.winGame();
 					}
 				} else {
-					if (cp.getX() + car.getWidth() > 830) {
-						cp.setLocation(830 - car.getWidth(), cp.getY());
+					if (car.getX() + car.getWidth() > 830) {
+                        car.setLocation(830 - car.getWidth(), car.getY());
 					}
 				}
-
-			} else {
-				cp.setBounds(startX, startY + (newY - oldY), cp.getWidth(), cp.getHeight());
-				if (cp.getY() < 50) {
-					cp.setLocation(cp.getX(), 50);
+			} else { // boundary check for vertical cars
+				// upper bound check
+				if (car.getY() < 53) {
+                    car.setLocation(car.getX(), 53);
 				}
-				if (cp.getY() + car.getHeight() > 540) {
-					cp.setLocation(cp.getX(), 540 - car.getHeight());
+				// lower bound check
+				if (car.getY() + car.getHeight() > 533) {
+                    car.setLocation(car.getX(), 533 - car.getHeight());
 				}
 			}
-			collidedCar = null;
 		}
 	}
 
-	// add trace when one stepCount made
+	// add trace when one step made
 	public void mouseReleased(MouseEvent e) {
-		Car c = (Car) e.getSource();
-		if (collidedCar != null) {
-			if (car.getCarDir() == 0) {
-				if (collidedCar.getX() > car.getX()) {
-					c.setBounds(collidedCar.getX() - car.getWidth(), startY,
-							c.getWidth(), c.getHeight());
-				} else {
-					c.setBounds(collidedCar.getX() + collidedCar.getWidth(), startY,
-							c.getWidth(), c.getHeight());
-				}
-			} else {
-				if (collidedCar.getY() > car.getY()) {
-					c.setBounds(startX, collidedCar.getY() - car.getHeight(),
-							c.getWidth(), c.getHeight());
-				} else {
-					c.setBounds(startX, collidedCar.getY() + collidedCar.getHeight(),
-							c.getWidth(), c.getHeight());
-				}
-			}
-		}
+	    int oldCarX = car.getCarX();
+	    int oldCarY = car.getCarY();
 
-        rushHour.stepCount++;
-        // when move a car, record the end position
-        Component cp = (Component) e.getSource();
-        rushHour.endPosRec.add(cp.getBounds());
+	    // fix the car location to blocks
+        car.setPosition(Car.Px2CarX(car.getX()), Car.Py2CarY(car.getY()));
+
+	    // update step counter when a move completed
+        rushHour.stepCount += Math.abs(oldCarX - car.getCarX());
+        rushHour.stepCount += Math.abs(oldCarY - car.getCarY());
+
+        // record the end position
+        rushHour.endPosRec.add(car.getBounds());
 	}
 
 	// detect whether moved cars occurred an collision with existing cars
-	private boolean collisionDetection() {
+	private boolean collisionDetection(int dx, int dy) {
+	    Rectangle oldRect = car.getBounds();
+
+	    if(car.getCarDir() == 0 && dx != 0) {
+            oldRect.setLocation(dx > 0 ? car.getX() + 1 : car.getX() - 1, startY);
+        } else if (car.getCarDir() == 1 && dy != 0) {
+            oldRect.setLocation(startX, dy > 0 ? car.getY() + 1 : car.getY() - 1);
+        }
+
 		boolean isCollide = false;
 		for (Car c : cars) {
-			Rectangle cRect = c.getBounds();
-			if ((car.getBounds().intersects(cRect) && car.getCarDir() != c.getCarDir())
-					&& car.getCarID() != c.getCarID()) {
-				collidedCar = c;
+			if (car.getCarID() != c.getCarID() &&
+                    c.getBounds().intersects(oldRect)) {
                 isCollide = true;
+                break;
 			}
 		}
 		return isCollide;

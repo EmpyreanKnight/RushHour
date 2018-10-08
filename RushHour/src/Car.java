@@ -2,12 +2,18 @@ import java.awt.*;
 import java.util.Random;
 import javax.swing.*;
 
-public class Car extends JButton {
-    final static int CAR_SIZE = 80; // the width of each block
+import static java.lang.Math.round;
+
+class Car extends JButton {
+    private final static int CAR_SIZE = 80; // the width of each block
+
+    // car coordinates are given in blocks, start from 1
+    // e.g. (1, 1) is the left-upper most block
+    // while (6, 6) is the right-lower most block
 
     private int carID; // Number of cars, target car always numbered as 1
-    private int carX;
-    private int carY;
+    private int carX; // x coordinate of car, counted by blocks
+    private int carY; // y coordinate of car, counted by blocks
     private int carType;// 0 indicates short, 1 indicates long
     private int carDir;// 0 indicates horizontal, 1 indicates vertical
 
@@ -30,7 +36,9 @@ public class Car extends JButton {
         setPosition();
     }
 
+    // update car location according to current x and y in blocks
     private void setPosition() {
+        // the bias of x and y coordinates relative to main window are 270 and -27
         if (carType == 0) {
             if (carDir == 0) {
                 this.setBounds(270 + carX * CAR_SIZE, carY * CAR_SIZE - 27, CAR_SIZE * 2, CAR_SIZE);
@@ -46,6 +54,7 @@ public class Car extends JButton {
         }
     }
 
+    // update car location according to given x and y in blocks
     void setPosition(int x, int y) {
         carX = x;
         carY = y;
@@ -70,6 +79,16 @@ public class Car extends JButton {
 
     int getCarType() {
         return carType;
+    }
+
+    // transform screen x position into block position
+    static int Px2CarX(int px) {
+        return (int)(round((double)(px - 270) / CAR_SIZE));
+    }
+
+    // transform screen y position into block position
+    static int Py2CarY(int py) {
+        return (int)(round((double)(py + 27) / CAR_SIZE));
     }
 }
 

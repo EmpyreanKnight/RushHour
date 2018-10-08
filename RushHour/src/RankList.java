@@ -14,8 +14,8 @@ import java.util.Collections;
 import java.util.List;
 
 class RankList {
-	// record item
-	private static final String rankFile = "./rank.xml";
+	// record file path
+	private static final String rankFilePath = "./rank.xml";
 
 	static class Record implements Comparable<Record> {
 		String user;
@@ -43,15 +43,15 @@ class RankList {
 		}
 	}
 
-	public static String readRank(int stage) {
+	static String readRank(int stage) {
 		StringBuilder rankStr = new StringBuilder();
         List<Record> list = new ArrayList<>();
-        File file = new File(rankFile);
-		secureFile(file);
+        File rankFile = new File(rankFilePath);
+		secureFile(rankFile);
 
 		try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document doc = builder.parse(file);
+            Document doc = builder.parse(rankFile);
             NodeList stageList = doc.getElementsByTagName("stage");
 
             for (int i = 0; i < stageList.getLength(); i++) {
@@ -78,13 +78,15 @@ class RankList {
 		Collections.sort(list);
 		int rank = 1;
 		for (Record entry : list) {
-			rankStr.append("Rank " + rank + ": " + entry + "\n");
+			rankStr.append("Rank ").append(rank).append(": ").append(entry).append("\n");
 			rank++;
 		}
 		return rankStr.toString();
 	}
 
     static void addNewRecord(String name, int time, int steps, int stage) {
+        File rankFile = new File(rankFilePath);
+	    secureFile(rankFile);
         try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.parse(rankFile);
@@ -138,7 +140,7 @@ class RankList {
 
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
             DOMSource domSource = new DOMSource(doc);
-            StreamResult streamResult = new StreamResult(rankFile);
+            StreamResult streamResult = new StreamResult(rankFilePath);
             transformer.transform(domSource, streamResult);
         } catch (Exception e) {
             e.printStackTrace();
@@ -156,19 +158,18 @@ class RankList {
         return 0;
     }
 
-    private static void secureFile(File fileName) {
+    // if the record file not exist, create and initialize it
+    private static void secureFile(File rankFile) {
         try {
-            if (fileName.createNewFile()) {
-                createRecordFile();
+            if (rankFile.createNewFile()) {
+                createRecordFile(rankFile);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static void createRecordFile() {
-        File outFile = new File(rankFile);
-        secureFile(outFile);
+    private static void createRecordFile(File rankFile) {
         try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.newDocument();
@@ -176,20 +177,13 @@ class RankList {
             for (int i = 1; i <= 3; i++) {
                 Element stage = doc.createElement("stage");
                 stage.setAttribute("number", Integer.toString(i));
-
-                Element record = doc.createElement("record");
-                record.setAttribute("name", "Rex");
-                record.setAttribute("time", "150");
-                record.setAttribute("steps", "15");
-                stage.appendChild(record);
-
                 root.appendChild(stage);
             }
             doc.appendChild(root);
 
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
             DOMSource domSource = new DOMSource(doc);
-            StreamResult streamResult = new StreamResult(outFile);
+            StreamResult streamResult = new StreamResult(rankFile);
             transformer.transform(domSource, streamResult);
         } catch (Exception e) {
             e.printStackTrace();
