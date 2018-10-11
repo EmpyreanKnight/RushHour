@@ -6,7 +6,7 @@ import javax.swing.*;
 import java.io.File;
 
 public class Speaker extends JButton implements ActionListener {
-	private boolean playMusic; // status: voice on/off
+    private boolean playMusic; // status: voice on/off
     private ImageIcon voiceOffIcon;
     private ImageIcon voiceOnIcon;
     private Clip bgm;
@@ -31,7 +31,7 @@ public class Speaker extends JButton implements ActionListener {
             endMusic.open(AudioSystem.getAudioInputStream(endFile));
         } catch (Exception e) {
             // show error info and exit when failed to load music
-            JOptionPane.showMessageDialog(getParent(),
+            JOptionPane.showMessageDialog(null,
                     "Failed to load voice resource!");
             System.exit(-1);
         }
@@ -43,32 +43,32 @@ public class Speaker extends JButton implements ActionListener {
     }
 
     // play countdown music (when voice on)
-	void startMusic() {
-		if (playMusic) {
-			startMusic.start();
-			startMusic.setFramePosition(0);
-		}
-	}
+    void startMusic() {
+        if (playMusic) {
+            startMusic.start();
+            startMusic.setFramePosition(0);
+        }
+    }
 
     // play winning music (when voice on)
-	void winningMusic() {
-		if (playMusic) {
-			endMusic.start();
+    void winningMusic() {
+        if (playMusic) {
+            endMusic.start();
             endMusic.setFramePosition(0);
-		}
-	}
+        }
+    }
 
-	@Override
-	// when button clicked, switch voice on/off
-	public void actionPerformed(ActionEvent e) {
-		if (playMusic) {
-			setIcon(voiceOffIcon);
-			playMusic = false;
-			bgm.stop();
-		} else {
-			setIcon(voiceOnIcon);
-			playMusic = true;
-			bgm.loop(10000);
-		}
-	}
+    @Override
+    // when button clicked, switch voice on/off
+    public void actionPerformed(ActionEvent e) {
+        if (playMusic) {
+            setIcon(voiceOffIcon);
+            playMusic = false;
+            bgm.stop();
+        } else {
+            setIcon(voiceOnIcon);
+            playMusic = true;
+            bgm.loop(10000);
+        }
+    }
 }

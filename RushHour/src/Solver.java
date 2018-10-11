@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -5,6 +6,20 @@ import java.util.Queue;
 import java.util.Vector;
 
 class Solver {
+    static class Steps {
+        int ID;
+        int fromX, fromY;
+        int toX, toY;
+
+        Steps(int ID, int fromX, int fromY, int toX, int toY) {
+            this.ID = ID;
+            this.fromX = fromX;
+            this.fromY = fromY;
+            this.toX = toX;
+            this.toY = toY;
+        }
+    }
+
     // classic Rush Hour parameters
     private static final int N = 6;
     private static final int M = 6;
@@ -31,7 +46,7 @@ class Solver {
 
     // finds the length of a cars
     private static int length(char car) {
-        return isType(car, LONGS) ? 3 : isType(car, SHORTS) ? 2 : 0 / 0;
+        return isType(car, LONGS) ? 3 : isType(car, SHORTS) ? 2 : -1;
         // a shortcut for throwing IllegalArgumentException
     }
 
@@ -83,6 +98,12 @@ class Solver {
         if (!isType(car, type))
             return;
         final int L = length(car);
+        if (L == -1) {
+            JOptionPane.showMessageDialog(null,
+                    "Error when executing solver!");
+            System.exit(-1);
+        }
+
         StringBuilder sb = new StringBuilder(current);
         for (int i = 0; i < n; i++) {
             r -= dr;
@@ -161,8 +182,6 @@ class Solver {
     private static int trace(String current) {
         String prev = pred.get(current);
         int step = (prev == null) ? 0 : trace(prev) + 1;
-        //System.out.println(stepCount);
-        //System.out.println(prettify(current));
         addTrace(prev, current);
         return step;
     }
@@ -213,23 +232,8 @@ class Solver {
             }
             explore(current);
         }
-
-        //System.out.println(pred.size() + " explored");
         return results;
     }
 }
 
 
-class Steps {
-    int ID;
-    int fromX, fromY;
-    int toX, toY;
-
-    Steps(int ID, int fromX, int fromY, int toX, int toY) {
-        this.ID = ID;
-        this.fromX = fromX;
-        this.fromY = fromY;
-        this.toX = toX;
-        this.toY = toY;
-    }
-}

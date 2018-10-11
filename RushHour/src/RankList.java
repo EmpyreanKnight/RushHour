@@ -2,6 +2,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
@@ -14,42 +16,42 @@ import java.util.Collections;
 import java.util.List;
 
 class RankList {
-	// record file path
-	private static final String rankFilePath = "./rank.xml";
+    // record file path
+    private static final String rankFilePath = "./rank.xml";
 
-	static class Record implements Comparable<Record> {
-		String user;
-		int time;
-		int steps;
+    static class Record implements Comparable<Record> {
+        String user;
+        int time;
+        int steps;
 
-		Record(String user, int time, int steps) {
-			this.user = user;
-			this.time = time;
-			this.steps = steps;
-		}
+        Record(String user, int time, int steps) {
+            this.user = user;
+            this.time = time;
+            this.steps = steps;
+        }
 
-		@Override
-		public int compareTo(Record rhs) {
-			if(steps != rhs.steps)
-				return steps - rhs.steps;
-			if(time != rhs.time)
-				return time - rhs.time;
-			return user.compareTo(rhs.user);
-		}
+        @Override
+        public int compareTo(Record rhs) {
+            if (steps != rhs.steps)
+                return steps - rhs.steps;
+            if (time != rhs.time)
+                return time - rhs.time;
+            return user.compareTo(rhs.user);
+        }
 
-		@Override
-		public String toString() {
-			return user + ", " + steps + " steps, " + time + "s";
-		}
-	}
+        @Override
+        public String toString() {
+            return user + ", " + steps + " steps, " + time + "s";
+        }
+    }
 
-	static String readRank(int stage) {
-		StringBuilder rankStr = new StringBuilder();
+    static String readRank(int stage) {
+        StringBuilder rankStr = new StringBuilder();
         List<Record> list = new ArrayList<>();
         File rankFile = new File(rankFilePath);
-		secureFile(rankFile);
+        secureFile(rankFile);
 
-		try {
+        try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.parse(rankFile);
             NodeList stageList = doc.getElementsByTagName("stage");
@@ -72,21 +74,23 @@ class RankList {
                 }
             }
         } catch (Exception e) {
-		    e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    "Failed to read record file!");
+            System.exit(-1);
         }
-		
-		Collections.sort(list);
-		int rank = 1;
-		for (Record entry : list) {
-			rankStr.append("Rank ").append(rank).append(": ").append(entry).append("\n");
-			rank++;
-		}
-		return rankStr.toString();
-	}
+
+        Collections.sort(list);
+        int rank = 1;
+        for (Record entry : list) {
+            rankStr.append("Rank ").append(rank).append(": ").append(entry).append("\n");
+            rank++;
+        }
+        return rankStr.toString();
+    }
 
     static void addNewRecord(String name, int time, int steps, int stage) {
         File rankFile = new File(rankFilePath);
-	    secureFile(rankFile);
+        secureFile(rankFile);
         try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.parse(rankFile);
@@ -125,7 +129,6 @@ class RankList {
                             targetTime = Integer.parseInt(record.getAttributes().getNamedItem("time").getNodeValue());
                         }
                     }
-                    System.out.println(nodeToBeReplaced);
                     if (nodeToBeReplaced != -1) {
                         Element record = doc.createElement("record");
                         record.setAttribute("name", name);
@@ -143,7 +146,9 @@ class RankList {
             StreamResult streamResult = new StreamResult(rankFilePath);
             transformer.transform(domSource, streamResult);
         } catch (Exception e) {
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    "Failed to write record file!");
+            System.exit(-1);
         }
     }
 
@@ -151,9 +156,9 @@ class RankList {
     // return value less than 0: left side is better
     // return value greater than 0: right side is better
     private static int compare(int lSteps, int lTime, int rSteps, int rTime) {
-        if(lSteps != rSteps)
+        if (lSteps != rSteps)
             return lSteps - rSteps;
-        if(lTime != rTime)
+        if (lTime != rTime)
             return lTime - rTime;
         return 0;
     }
@@ -162,31 +167,27 @@ class RankList {
     private static void secureFile(File rankFile) {
         try {
             if (rankFile.createNewFile()) {
-                createRecordFile(rankFile);
+                // create new record file
+                DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                Document doc = builder.newDocument();
+                Element root = doc.createElement("rank_list");
+                for (int i = 1; i <= 3; i++) {
+                    Element stage = doc.createElement("stage");
+                    stage.setAttribute("number", Integer.toString(i));
+                    root.appendChild(stage);
+                }
+                doc.appendChild(root);
+
+                Transformer transformer = TransformerFactory.newInstance().newTransformer();
+                DOMSource domSource = new DOMSource(doc);
+                StreamResult streamResult = new StreamResult(rankFile);
+                transformer.transform(domSource, streamResult);
             }
         } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void createRecordFile(File rankFile) {
-        try {
-            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document doc = builder.newDocument();
-            Element root = doc.createElement("rank_list");
-            for (int i = 1; i <= 3; i++) {
-                Element stage = doc.createElement("stage");
-                stage.setAttribute("number", Integer.toString(i));
-                root.appendChild(stage);
-            }
-            doc.appendChild(root);
-
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            DOMSource domSource = new DOMSource(doc);
-            StreamResult streamResult = new StreamResult(rankFile);
-            transformer.transform(domSource, streamResult);
-        } catch (Exception e) {
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    "Failed to create record file!");
+            System.exit(-1);
         }
     }
 }
+

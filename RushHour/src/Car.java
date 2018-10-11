@@ -83,12 +83,12 @@ class Car extends JButton {
 
     // transform screen x position into block position
     static int Px2CarX(int px) {
-        return (int)(round((double)(px - 270) / CAR_SIZE));
+        return (int) (round((double) (px - 270) / CAR_SIZE));
     }
 
     // transform screen y position into block position
     static int Py2CarY(int py) {
-        return (int)(round((double)(py + 27) / CAR_SIZE));
+        return (int) (round((double) (py + 27) / CAR_SIZE));
     }
 }
 
